@@ -9,6 +9,8 @@ namespace CustomerApi.Controllers
 	[Route("[controller]")]
 	public class CustomerController
 	{
+		private static CustomerDto _customer;
+
 		[HttpPost]
 		public Guid Create(CreateCustomerRequest request)
 		{
@@ -18,12 +20,18 @@ namespace CustomerApi.Controllers
 		[HttpPost]
 		public void Anonymize(AnonymizeCustomerRequest request)
 		{
+			_customer = new CustomerDto
+			{
+				FirstName = "Anonymiserad",
+				LastName = "Anonymiserad",
+				Email = string.Empty
+			};
 		}
 
 		[HttpGet]
 		public CustomerDto Get(Guid id)
 		{
-			return new CustomerDto();
+			return _customer;
 		}
 	}
 }
