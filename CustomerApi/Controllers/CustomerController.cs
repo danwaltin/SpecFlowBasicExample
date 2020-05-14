@@ -1,6 +1,7 @@
 ﻿using CustomerApi.Requests;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using CustomerApi.Dtos;
 
 namespace CustomerApi.Controllers
 {
@@ -17,6 +18,12 @@ namespace CustomerApi.Controllers
 		[HttpPost]
 		public void Anonymize(AnonymizeCustomerRequest request)
 		{
+		}
+
+		[HttpGet]
+		public CustomerDto Get(Guid id)
+		{
+			return new CustomerDto();
 		}
 	}
 }

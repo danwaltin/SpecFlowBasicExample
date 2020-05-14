@@ -1,6 +1,8 @@
 ﻿using CustomerApi.Controllers;
 using CustomerApi.Requests;
 using System.Linq;
+using CustomerApi.Dtos;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TechTalk.SpecFlow;
 
 namespace Requirements.Bindings
@@ -48,7 +50,20 @@ namespace Requirements.Bindings
 		[Then(@"ska kundens uppgifter vara")]
 		public void SaSkaKundensUppgifterVara(Table table)
 		{
-			ScenarioContext.Current.Pending();
+			var expected = new CustomerDto
+			{
+				FirstName = GetValue(table, "Förnamn"),
+				LastName = GetValue(table, "Efternamn"),
+				Email = GetValue(table, "Epost")
+			};
+
+			var api = new CustomerController();
+
+			var actual = api.Get(_sharedCustomer.IdOfLastCreatedCustomer);
+
+			Assert.AreEqual(expected.FirstName, actual.FirstName);
+			Assert.AreEqual(expected.LastName, actual.LastName);
+			Assert.AreEqual(expected.Email, actual.Email);
 		}
 
 		private string GetValue(Table table, string uppgift)
