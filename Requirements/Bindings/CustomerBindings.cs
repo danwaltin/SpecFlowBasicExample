@@ -2,19 +2,47 @@
 using CustomerApi.Requests;
 using System.Linq;
 using CustomerApi.Dtos;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Binders;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TechTalk.SpecFlow;
 
 namespace Requirements.Bindings
 {
 	[Binding]
+	public class SpecFlowHooks
+	{
+		private readonly ScenarioContext _context;
+
+		public SpecFlowHooks(ScenarioContext context)
+		{
+			_context = context;
+		}
+
+		[BeforeScenario]
+		public void BeforeScenario()
+		{
+			_context["Repository"] = new CustomerRepository();
+		}
+	}
+
+	[Binding]
 	public class CustomerBindings
 	{
+		private readonly ScenarioContext _context;
 		private readonly SharedCustomer _sharedCustomer;
 
-		public CustomerBindings(SharedCustomer sharedCustomer)
+		public CustomerBindings(
+			ScenarioContext context, 
+			SharedCustomer sharedCustomer)
 		{
+			_context = context;
 			_sharedCustomer = sharedCustomer;
+		}
+
+		private CustomerController Api()
+		{
+			var repository = (CustomerRepository) _context["Repository"];
+			return new CustomerController(repository);
 		}
 
 		[Given(@"en kund med följande uppgifter")]
@@ -27,9 +55,7 @@ namespace Requirements.Bindings
 				Email = GetValue(table, "Epost")
 			};
 
-			var api = new CustomerController();
-
-			var customerId = api.Create(request);
+			var customerId = Api().Create(request);
 
 			_sharedCustomer.CustomerIds[request.Email] = customerId;
 		}
@@ -46,9 +72,7 @@ namespace Requirements.Bindings
 					Email = row["Epost"]
 				};
 
-				var api = new CustomerController();
-
-				var customerId = api.Create(request);
+				var customerId = Api().Create(request);
 
 				_sharedCustomer.CustomerIds[request.Email] = customerId;
 			}
@@ -62,9 +86,7 @@ namespace Requirements.Bindings
 				CustomerId = _sharedCustomer.CustomerIds.First().Value
 			};
 
-			var api = new CustomerController();
-
-			api.Anonymize(request);
+			Api().Anonymize(request);
 		}
 
 		[When(@"kunden '(.*)' anonymiseras")]
@@ -75,9 +97,7 @@ namespace Requirements.Bindings
 				CustomerId = _sharedCustomer.CustomerIds[email]
 			};
 
-			var api = new CustomerController();
-
-			api.Anonymize(request);
+			Api().Anonymize(request);
 		}
 
 		[Then(@"ska kundens uppgifter vara")]
@@ -90,9 +110,7 @@ namespace Requirements.Bindings
 				Email = GetValue(table, "Epost")
 			};
 
-			var api = new CustomerController();
-
-			var actual = api.Get(_sharedCustomer.IdOfLastCreatedCustomer);
+			var actual = Api().Get(_sharedCustomer.CustomerIds.First().Value);
 
 			Assert.AreEqual(expected.FirstName, actual.FirstName);
 			Assert.AreEqual(expected.LastName, actual.LastName);
@@ -102,8 +120,7 @@ namespace Requirements.Bindings
 		[Then(@"ska följande kunder finnas")]
 		public void SaSkaFoljandeKunderFinnas(Table table)
 		{
-			var api = new CustomerController();
-			var actual = api.Get();
+			var actual = Api().Get();
 
 			Assert.AreEqual(table.RowCount, actual.Count, "Wrong number of customers");
 
