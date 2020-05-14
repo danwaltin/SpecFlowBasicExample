@@ -1,6 +1,7 @@
 ﻿using CustomerApi.Requests;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Collections.Generic;
 using CustomerApi.Dtos;
 
 namespace CustomerApi.Controllers
@@ -32,6 +33,12 @@ namespace CustomerApi.Controllers
 		public CustomerDto Get(Guid id)
 		{
 			return _customer;
+		}
+
+		[HttpGet]
+		public List<CustomerDto> Get()
+		{
+			return new List<CustomerDto>();
 		}
 	}
 }
