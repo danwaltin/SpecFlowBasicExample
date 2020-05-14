@@ -14,3 +14,16 @@ Scenario: Personuppgifter anonymiseras
         | Förnamn   | Anonymiserad |
         | Efternamn | Anonymiserad |
         | Epost     |              |
+
+Scenario: Personuppgifter anonymiseras för en av flera kunder
+	Givet följande kunder
+        | Förnamn | Efternamn | Epost            |
+        | Ada     | Lovelace  | ada@example.com  |
+        | Alan    | Turing    | alan@example.com |
+
+    När kunden 'alan@example.com' anonymiseras
+
+    Så ska följande kunder finnas
+        | Förnamn      | Efternamn    | Epost           |
+        | Ada          | Lovelace     | ada@example.com |
+        | Anonymiserad | Anonymiserad |                 |
