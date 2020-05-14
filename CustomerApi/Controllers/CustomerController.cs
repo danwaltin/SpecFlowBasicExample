@@ -9,9 +9,14 @@ namespace CustomerApi.Controllers
 	public class CustomerController
 	{
 		[HttpPost]
-		public void Create(CreateCustomerRequest request)
+		public Guid Create(CreateCustomerRequest request)
 		{
-			throw new NotImplementedException();
+			return Guid.NewGuid();
+		}
+
+		[HttpPost]
+		public void Anonymize(AnonymizeCustomerRequest request)
+		{
 		}
 	}
 }
