@@ -7,7 +7,7 @@ using CustomerApi.Dtos;
 namespace CustomerApi.Controllers
 {
 	[ApiController]
-	[Route("[controller]")]
+	[Route("api/[controller]")]
 	public class CustomerController
 	{
 		private readonly CustomerRepository _repository;
@@ -30,7 +30,7 @@ namespace CustomerApi.Controllers
 			return id;
 		}
 
-		[HttpPost]
+		[HttpPost("anonymize")]
 		public void Anonymize(AnonymizeCustomerRequest request)
 		{
 			var customer = Get(request.CustomerId);
@@ -42,7 +42,7 @@ namespace CustomerApi.Controllers
 			_repository.Save(request.CustomerId, customer);
 		}
 
-		[HttpGet]
+		[HttpGet("{id}")]
 		public CustomerDto Get(Guid id)
 		{
 			return _repository.Get(id);
