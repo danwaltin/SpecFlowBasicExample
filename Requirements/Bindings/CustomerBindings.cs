@@ -1,120 +1,64 @@
 ﻿using CustomerApi.Controllers;
-using CustomerApi.Requests;
-using System.Linq;
 using CustomerApi.Dtos;
-using Microsoft.AspNetCore.Mvc.ModelBinding.Binders;
+using CustomerApi.Requests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TechTalk.SpecFlow;
 
 namespace Requirements.Bindings
 {
 	[Binding]
-	public class SpecFlowHooks
-	{
-		private readonly ScenarioContext _context;
-
-		public SpecFlowHooks(ScenarioContext context)
-		{
-			_context = context;
-		}
-
-		[BeforeScenario]
-		public void BeforeScenario()
-		{
-			_context["Repository"] = new CustomerRepository();
-		}
-	}
-
-	[Binding]
 	public class CustomerBindings
 	{
 		private readonly ScenarioContext _context;
+		private readonly CustomerMapper _mapper;
 		private readonly SharedCustomer _sharedCustomer;
 
 		public CustomerBindings(
-			ScenarioContext context, 
+			ScenarioContext context,
+			CustomerMapper mapper,
 			SharedCustomer sharedCustomer)
 		{
 			_context = context;
+			_mapper = mapper;
 			_sharedCustomer = sharedCustomer;
-		}
-
-		private CustomerController Api()
-		{
-			var repository = (CustomerRepository) _context["Repository"];
-			return new CustomerController(repository);
 		}
 
 		[Given(@"en kund med följande uppgifter")]
 		public void GivetEnKundMedFoljandeUppgifter(Table table)
 		{
-			var request = new CreateCustomerRequest
-			{
-				FirstName = GetValue(table, "Förnamn"),
-				LastName = GetValue(table, "Efternamn"),
-				Email = GetValue(table, "Epost")
-			};
-
-			var customerId = Api().Create(request);
-
-			_sharedCustomer.CustomerIds[request.Email] = customerId;
+			var request = _mapper.CreateCustomerRequest(table);
+			CreateCustomer(request);
 		}
 
 		[Given(@"följande kunder")]
 		public void GivetFoljandeKunder(Table table)
 		{
-			foreach (var row in table.Rows)
+			foreach (var request in _mapper.CreateCustomerRequests(table))
 			{
-				var request = new CreateCustomerRequest
-				{
-					FirstName = row["Förnamn"],
-					LastName = row["Efternamn"],
-					Email = row["Epost"]
-				};
-
-				var customerId = Api().Create(request);
-
-				_sharedCustomer.CustomerIds[request.Email] = customerId;
+				CreateCustomer(request);
 			}
 		}
 
 		[When(@"kunden anonymiseras")]
 		public void NarKundenAnonymiseras()
 		{
-			var request = new AnonymizeCustomerRequest
-			{
-				CustomerId = _sharedCustomer.CustomerIds.First().Value
-			};
-
-			Api().Anonymize(request);
+			Api().Anonymize(_mapper.AnonymizeCustomerRequest());
 		}
 
 		[When(@"kunden '(.*)' anonymiseras")]
 		public void NarKundenAnonymiseras(string email)
 		{
-			var request = new AnonymizeCustomerRequest
-			{
-				CustomerId = _sharedCustomer.CustomerIds[email]
-			};
-
-			Api().Anonymize(request);
+			Api().Anonymize(_mapper.AnonymizeCustomerRequest(email));
 		}
 
 		[Then(@"ska kundens uppgifter vara")]
 		public void SaSkaKundensUppgifterVara(Table table)
 		{
-			var expected = new CustomerDto
-			{
-				FirstName = GetValue(table, "Förnamn"),
-				LastName = GetValue(table, "Efternamn"),
-				Email = GetValue(table, "Epost")
-			};
+			var expected = _mapper.Customer(table);
 
-			var actual = Api().Get(_sharedCustomer.CustomerIds.First().Value);
+			var actual = Api().Get(_mapper.TheOnlyCustomerId);
 
-			Assert.AreEqual(expected.FirstName, actual.FirstName);
-			Assert.AreEqual(expected.LastName, actual.LastName);
-			Assert.AreEqual(expected.Email, actual.Email);
+			AssertCustomer(expected, actual);
 		}
 
 		[Then(@"ska följande kunder finnas")]
@@ -125,27 +69,31 @@ namespace Requirements.Bindings
 			Assert.AreEqual(table.RowCount, actual.Count, "Wrong number of customers");
 
 			// Assume that the order is important
-			for (var i = 0; i < table.RowCount; i++)
+			var i = 0;
+			foreach (var expected in _mapper.Customers(table))
 			{
-				var row = table.Rows[i];
-				var expected = new CustomerDto
-				{
-					FirstName = row["Förnamn"],
-					LastName = row["Efternamn"],
-					Email = row["Epost"]
-				};
-
-				Assert.AreEqual(expected.FirstName, actual[i].FirstName);
-				Assert.AreEqual(expected.LastName, actual[i].LastName);
-				Assert.AreEqual(expected.Email, actual[i].Email);
+				AssertCustomer(expected, actual[i]);
+				i++;
 			}
-
 		}
 
-		private string GetValue(Table table, string uppgift)
+		private CustomerController Api()
 		{
-			var row = table.Rows.First(row => row["Uppgift"] == uppgift);
-			return row["Värde"];
+			return new CustomerController(_context.Repository());
+		}
+
+		private void CreateCustomer(CreateCustomerRequest request)
+		{
+			var customerId = Api().Create(request);
+
+			_sharedCustomer.CustomerIds[request.Email] = customerId;
+		}
+
+		private void AssertCustomer(CustomerDto expected, CustomerDto actual)
+		{
+			Assert.AreEqual(expected.FirstName, actual.FirstName);
+			Assert.AreEqual(expected.LastName, actual.LastName);
+			Assert.AreEqual(expected.Email, actual.Email);
 		}
 	}
 }

@@ -2,36 +2,10 @@
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using CustomerApi.Dtos;
 
 namespace CustomerApi.Controllers
 {
-	public class CustomerRepository
-	{
-		private Dictionary<Guid, CustomerDto> _customerRepository = new Dictionary<Guid, CustomerDto>();
-
-		public void Add(Guid id, CustomerDto customer)
-		{
-			_customerRepository[id] = customer;
-		}
-
-		public CustomerDto Get(Guid id)
-		{
-			return _customerRepository[id];
-		}
-
-		public List<CustomerDto> GetAll()
-		{
-			return _customerRepository.Values.ToList();
-		}
-
-		public void Save(Guid id, CustomerDto customer)
-		{
-			_customerRepository[id] = customer;
-		}
-	}
-
 	[ApiController]
 	[Route("[controller]")]
 	public class CustomerController
@@ -60,6 +34,7 @@ namespace CustomerApi.Controllers
 		public void Anonymize(AnonymizeCustomerRequest request)
 		{
 			var customer = Get(request.CustomerId);
+
 			customer.FirstName = "Anonymiserad";
 			customer.LastName = "Anonymiserad";
 			customer.Email = string.Empty;
